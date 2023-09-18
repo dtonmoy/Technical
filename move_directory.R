@@ -4,8 +4,8 @@ library(ff)
 
 ##########
 # Set parameters
-from <- "/Users/tonmoy/Research/CELLICATE_project/test/directory_move/test/first"
-to <- "/Users/tonmoy/Research/CELLICATE_project/test/directory_move/test/second"
+from <- "/Directory/containing/the/folders/that/are/to/be/moved"
+to <- "/Directory/where/the/folders/will/be/moved"
 
 ##########
 # Get the directory lists
