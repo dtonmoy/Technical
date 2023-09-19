@@ -1,3 +1,3 @@
-# R-related
+# Technical issues
 
-This repository holds the technical R-related issues
+This repository holds the technical issues related to R, python and linux
