@@ -11,4 +11,4 @@ conda create --name env_name pandas numpy matplotlib scikit-learn
 #-----
 # Remove a conda environment
 #-----
-conda env remove –prefix "conda_env"
+conda env remove -–prefix "conda_env"
