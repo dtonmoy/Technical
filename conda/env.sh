@@ -19,7 +19,7 @@ conda env remove -–prefix "conda_env"
 mamba create --prefix new_env --clone path/to/file/env1
 
 # -----
-# clone an existing conda repository using prefix
+# Remove a conda environment based on conda repository
 # -----
 conda remove --name "conda_env" --all
 
