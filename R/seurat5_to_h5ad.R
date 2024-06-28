@@ -208,8 +208,10 @@ seurat_to_h5ad <- function(seurat_object) {
                 
                 # == Create a blank matrix with the same dimensions # ----------
                 pca_fl <- matrix(0, nrow = nrow(seurat_object), ncol = ncol(seurat_object@reductions[["pca"]]@feature.loadings))
+                
                 # == Fix the row names at first # ------------------------------
                 rownames(pca_fl) <- rownames(seurat_object)
+                
                 # == Replace the rows with the same PCA loading # --------------
                 pca_fl[rownames(seurat_object@reductions[["pca"]]@feature.loadings), ] <- seurat_object@reductions[["pca"]]@feature.loadings
                 
@@ -232,6 +234,10 @@ seurat_to_h5ad <- function(seurat_object) {
         }
 
         if (names(seurat_object@assays) == "Spatial") {
+            
+            ### ################################################################
+            ### TODO: Add the spatial information to the adata
+            ### ################################################################
             
             # =========================
             # Create the image slot structure for adata
@@ -264,10 +270,12 @@ seurat_to_h5ad <- function(seurat_object) {
             if (class(seurat_object@assays[["Spatial"]]@layers[["counts"]]) == "dgCMatrix") {
                 adata$layers[["counts"]] <- t(seurat_object@assays[["Spatial"]]@layers[["counts"]])
             }
+            
             # == log2 normalized data # --------------------------------------------
             if (class(seurat_object@assays[["Spatial"]]@layers[["data"]]) == "dgCMatrix") {
                 adata$layers[["log2norm_counts"]] <- t(seurat_object@assays[["Spatial"]]@layers[["counts"]])
             }
+            
             # == scaled data # -----------------------------------------------------
             if ((class(seurat_object@assays[["Spatial"]]@layers[["scale.data"]]) == "matrix")[1]) {
                 scaled_data <- t(seurat_object@assays[["Spatial"]]@layers[["scale.data"]])
@@ -291,10 +299,12 @@ seurat_to_h5ad <- function(seurat_object) {
             if (class(seurat_object@assays[["RNA"]]@layers[["counts"]]) == "dgCMatrix") {
                 adata$layers[["counts"]] <- t(seurat_object@assays[["RNA"]]@layers[["counts"]])
             }
+            
             # == log2 normalized data # --------------------------------------------
             if (class(seurat_object@assays[["RNA"]]@layers[["data"]]) == "dgCMatrix") {
                 adata$layers[["log2norm_counts"]] <- t(seurat_object@assays[["RNA"]]@layers[["counts"]])
             }
+            
             # == scaled data # -----------------------------------------------------
             if ((class(seurat_object@assays[["RNA"]]@layers[["scale.data"]]) == "matrix")[1]) {
                 scaled_data <- t(seurat_object@assays[["RNA"]]@layers[["scale.data"]])
