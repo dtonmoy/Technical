@@ -147,6 +147,9 @@ seurat_object_converted <- h5ad_to_seurat(sc_bla) # spatial_adata/sc_bla --> wor
 sc_seurat <- readRDS("/Users/tonmoy/Research/GBM_3/data/ALA_count/ala_seurat_filtered_final.rds")
 
 
+### ################################################
+### TODO: Check if all the functions work both in scanpy and seurat
+### ################################################
 # ##################################################
 # Convert the seurat to h5ad
 seurat_to_h5ad <- function(seurat_object) {
@@ -157,24 +160,22 @@ seurat_to_h5ad <- function(seurat_object) {
         # Check for the assay type and create adata object
         # ----------
         if (names(seurat_object@assays) == "Spatial") {
-            
             # == Spatial assay # -----------------------------------------------
-            adata <- AnnData(X = t(seurat_object@assays[["Spatial"]]@layers[["counts"]]),
-                             obs = seurat_object@meta.data,
-                             obsm = seurat_object@misc[["obsm"]],
-                             var = seurat_object@misc[["var"]],
-                             varm = seurat_object@misc[["varm"]],
-                             varp = seurat_object@misc[["varp"]])
+            key <- "Spatial"
         } else if (names(seurat_object@assays) == "RNA") {
-            
             # == RNA assay # ---------------------------------------------------
-            adata <- AnnData(X = t(seurat_object@assays[["RNA"]]@layers[["counts"]]),
-                             obs = seurat_object@meta.data,
-                             obsm = seurat_object@misc[["obsm"]],
-                             var = seurat_object@misc[["var"]],
-                             varm = seurat_object@misc[["varm"]],
-                             varp = seurat_object@misc[["varp"]])
+            key <- "RNA"
         }
+        
+        # ----------
+        # Check for the assay type and create adata object
+        # ----------
+        adata <- AnnData(X = t(seurat_object@assays[[key]]@layers[["counts"]]),
+                         obs = seurat_object@meta.data,
+                         obsm = seurat_object@misc[["obsm"]],
+                         var = seurat_object@misc[["var"]],
+                         varm = seurat_object@misc[["varm"]],
+                         varp = seurat_object@misc[["varp"]])
 
     } else {
         
@@ -233,15 +234,34 @@ seurat_to_h5ad <- function(seurat_object) {
             umap <- NULL
         }
 
+        # ----------
+        # Prepare the assay names and version ("v1" or "v2")
+        # ----------
         if (names(seurat_object@assays) == "Spatial") {
+            # == Spatial assay # -----------------------------------------------
+            key <- "Spatial"
+            # == Check the version of the spatial assay # ----------------------
+            if (class(seurat_object@images[["slice1"]])[1] == "VisiumV1") {
+                assay_version <- "v1"
+            } else if (class(seurat_object@images[["slice1"]])[1] == "VisiumV2") {
+                assay_version <- "v2"
+            } else {
+                stop("The spatial assay version is not supported for now!!")
+            }
             
-            ### ################################################################
-            ### TODO: Add the spatial information to the adata
-            ### ################################################################
+        } else if (names(seurat_object@assays) == "RNA") {
+            # == RNA assay # ---------------------------------------------------
+            key <- "RNA"
+        } else {
+            stop("The seurat object does not have the required slots to convert it into h5ad")
+        }
             
-            # =========================
-            # Create the image slot structure for adata
-            # =========================
+        
+        # =========================
+        # Create the image slot structure for adata if the assay is spatial
+        # =========================
+        if (key == "Spatial") {
+            
             image_slot_structure <- list(
                 spatial_sample = list(
                     images = list(
@@ -256,64 +276,76 @@ seurat_to_h5ad <- function(seurat_object) {
                 )
             )
             
-            # =========================
-            # Spatial assay
-            # =========================
-            adata <- AnnData(X = t(seurat_object@assays[["Spatial"]]@layers[["counts"]]),
-                             obs = seurat_object@meta.data,
-                             var = var)
-            
-            # =========================
-            # Add layers
-            # =========================
-            # == Count data # -----------------------------------------------------
-            if (class(seurat_object@assays[["Spatial"]]@layers[["counts"]]) == "dgCMatrix") {
-                adata$layers[["counts"]] <- t(seurat_object@assays[["Spatial"]]@layers[["counts"]])
-            }
-            
-            # == log2 normalized data # --------------------------------------------
-            if (class(seurat_object@assays[["Spatial"]]@layers[["data"]]) == "dgCMatrix") {
-                adata$layers[["log2norm_counts"]] <- t(seurat_object@assays[["Spatial"]]@layers[["counts"]])
-            }
-            
-            # == scaled data # -----------------------------------------------------
-            if ((class(seurat_object@assays[["Spatial"]]@layers[["scale.data"]]) == "matrix")[1]) {
-                scaled_data <- t(seurat_object@assays[["Spatial"]]@layers[["scale.data"]])
-                colnames(scaled_data) <- NULL
-                adata$layers[["scaled"]] <- scaled_data
-            }
-            
-        } else if (names(seurat_object@assays) == "RNA") {
-            
-            # =========================
-            # RNA assay
-            # =========================
-            adata <- AnnData(X = t(seurat_object@assays[["RNA"]]@layers[["counts"]]),
-                             obs = seurat_object@meta.data,
-                             var = var)
-
-            # =========================
-            # Add layers
-            # =========================
-            # == Count data # -----------------------------------------------------
-            if (class(seurat_object@assays[["RNA"]]@layers[["counts"]]) == "dgCMatrix") {
-                adata$layers[["counts"]] <- t(seurat_object@assays[["RNA"]]@layers[["counts"]])
-            }
-            
-            # == log2 normalized data # --------------------------------------------
-            if (class(seurat_object@assays[["RNA"]]@layers[["data"]]) == "dgCMatrix") {
-                adata$layers[["log2norm_counts"]] <- t(seurat_object@assays[["RNA"]]@layers[["counts"]])
-            }
-            
-            # == scaled data # -----------------------------------------------------
-            if ((class(seurat_object@assays[["RNA"]]@layers[["scale.data"]]) == "matrix")[1]) {
-                scaled_data <- t(seurat_object@assays[["RNA"]]@layers[["scale.data"]])
-                colnames(scaled_data) <- NULL
-                adata$layers[["scaled"]] <- scaled_data
-                
-        } else {
-            stop("The seurat object does not have the required slots to convert it into h5ad")
         }
+        
+        # =========================
+        # Create the adata object
+        # =========================
+        adata <- AnnData(X = t(seurat_object@assays[[key]]@layers[["counts"]]),
+                         obs = seurat_object@meta.data,
+                         var = var)
+
+        # ----------
+        # Add spatial information to the adata object
+        # ----------
+        if (key == "Spatial") {
+            adata$uns$spatial <- image_slot_structure
+            
+            # == Add the spatial coordinates # ---------------------------------
+            if (assay_version == "v1") {
+                
+                adata$obs <- cbind(seurat_object@images[["slice1"]]@coordinates[["tissue"]],
+                                   seurat_object@images[["slice1"]]@coordinates[["row"]],
+                                   seurat_object@images[["slice1"]]@coordinates[["col"]],
+                                   adata$obs)
+                # ==========
+                # Fix the column names
+                # ==========
+                colnames(adata$obs)[colnames(adata$obs) == 'seurat_object@images[["slice1"]]@coordinates[["tissue"]]'] <- "in_tissue"
+                colnames(adata$obs)[colnames(adata$obs) == 'seurat_object@images[["slice1"]]@coordinates[["row"]]'] <- "array_row"
+                colnames(adata$obs)[colnames(adata$obs) == 'seurat_object@images[["slice1"]]@coordinates[["col"]]'] <- "array_col"
+                
+            } else if (assay_version == "v2") {
+                
+                # ==========
+                # Append the in_tissue column
+                # ==========
+                adata$obs$in_tissue <- 1
+                
+                adata$obs <- cbind(data.frame(seurat_object@images[["slice1"]]@boundaries[["centroids"]]@coords)$x,
+                                   data.frame(seurat_object@images[["slice1"]]@boundaries[["centroids"]]@coords)$y,
+                                   adata$obs)
+                
+                # ==========
+                # Fix the column names
+                # ==========
+                colnames(adata$obs)[colnames(adata$obs) == 'data.frame(seurat_object@images[["slice1"]]@boundaries[["centroids"]]@coords)$x'] <- "array_row"
+                colnames(adata$obs)[colnames(adata$obs) == 'data.frame(seurat_object@images[["slice1"]]@boundaries[["centroids"]]@coords)$y'] <- "array_col"
+                
+                
+            }
+        }
+        
+        # =========================
+        # Add layers
+        # =========================
+        # == Count data # ------------------------------------------------------
+        if (class(seurat_object@assays[[key]]@layers[["counts"]]) == "dgCMatrix") {
+            adata$layers[["counts"]] <- t(seurat_object@assays[[key]]@layers[["counts"]])
+        }
+        
+        # == log2 normalized data # --------------------------------------------
+        if (class(seurat_object@assays[[key]]@layers[["data"]]) == "dgCMatrix") {
+            adata$layers[["log2norm_counts"]] <- t(seurat_object@assays[[key]]@layers[["counts"]])
+        }
+        
+        # == Scaled data # -----------------------------------------------------
+        if ((class(seurat_object@assays[[key]]@layers[["scale.data"]]) == "matrix")[1]) {
+            scaled_data <- t(seurat_object@assays[[key]]@layers[["scale.data"]])
+            colnames(scaled_data) <- NULL
+            adata$layers[["scaled"]] <- scaled_data
+        }
+            
             
         # ----------
         # Check if the following slots are present or not
@@ -327,24 +359,26 @@ seurat_to_h5ad <- function(seurat_object) {
         # == UMAP cell embedding # ---------------------------------------------
         if (!is.null(umap)) {
             adata$obsm$X_umap <- umap
+        }
         
         # == PCA feature loading # ---------------------------------------------
         if (!is.null(pca_fl)) {
             adata$varm$PCs <- pca_fl
-        }
-            
         }
         
     } 
     
     return(adata)
 
-    }
 }
+
+lalala <- readRDS("/Users/tonmoy/Research/Spatial_proximity_project/data/all_seurat/seurat_list_processed.rds")
+lipili <- Load10X_Spatial("/Users/tonmoy/Research/Spatial_proximity_project/data/LGG/LGG/IDHm_BWH23_oligo/")
+spatial_seurat <- lalala[[1]]
 
 dim(sc_bla$varm$PCs)
 
-# 
 # labla <- seurat_list[[1]]
-balala <- seurat_to_h5ad(sc_seurat)
+balala <- seurat_to_h5ad(lipili)
+balala <- seurat_to_h5ad(spatial_seurat)
 
