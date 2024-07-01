@@ -140,10 +140,10 @@ h5ad_to_seurat <- function(adata) {
 
 # ##################################################
 # Check if the conversion is working or not (h5ad to seurat)
+# ##################################################
 spatial_adata <- read_h5ad("/Users/tonmoy/Downloads/UKF334_T_ST.h5ad")
 sc_bla <- read_h5ad("/Users/tonmoy/Downloads/Dummy_object.h5ad")
 seurat_object_converted <- h5ad_to_seurat(sc_bla) # spatial_adata/sc_bla --> works FINE
-
 
 
 # ##################################################
@@ -301,6 +301,13 @@ seurat_to_h5ad <- function(seurat_object) {
                 colnames(adata$obs)[colnames(adata$obs) == 'seurat_object@images[["slice1"]]@coordinates[["row"]]'] <- "array_row"
                 colnames(adata$obs)[colnames(adata$obs) == 'seurat_object@images[["slice1"]]@coordinates[["col"]]'] <- "array_col"
                 
+                # =========================
+                # Add spatial info in the obsm
+                # =========================
+                adata$obsm$spatial <- cbind(seurat_object@images[["slice1"]]@coordinates[["imagecol"]],
+                                            seurat_object@images[["slice1"]]@coordinates[["imagerow"]])
+                colnames(adata$obsm$spatial) <- NULL
+                
             } else if (assay_version == "v2") {
                 
                 # ==========
@@ -311,6 +318,12 @@ seurat_to_h5ad <- function(seurat_object) {
                 adata$obs <- cbind(data.frame(seurat_object@images[["slice1"]]@boundaries[["centroids"]]@coords)$x,
                                    data.frame(seurat_object@images[["slice1"]]@boundaries[["centroids"]]@coords)$y,
                                    adata$obs)
+                
+                # =========================
+                # Add spatial info in the obsm
+                # =========================
+                adata$obsm$spatial <- seurat_object@images[["slice1"]]@boundaries[["centroids"]]@coords
+                colnames(adata$obsm$spatial) <- NULL
                 
                 # ==========
                 # Fix the column names
@@ -342,7 +355,6 @@ seurat_to_h5ad <- function(seurat_object) {
             adata$layers[["scaled"]] <- scaled_data
         }
             
-            
         # ----------
         # Check if the following slots are present or not
         # If present, then add them to the adata object
@@ -371,6 +383,7 @@ seurat_to_h5ad <- function(seurat_object) {
 
 # ##################################################
 # Check if the conversion is working or not (seurat to h5ad)
+# ##################################################
 lalala <- readRDS("/Users/tonmoy/Research/Spatial_proximity_project/data/all_seurat/seurat_list_processed.rds")
 lololo <- seurat_to_h5ad(lalala[[1]]) # --> works fine for v1 spatial
 
@@ -390,10 +403,6 @@ write_h5ad(
     compression_opts = NULL,
     as_dense = list()
 )
-
-
-
-
 
 
 
