@@ -70,7 +70,7 @@ get_image_h5ad <- function(adata, assay="Spatial", slice="slice1") {
 # ##################################################
 # Convert the h5ad to seurat
 h5ad_to_seurat <- function(adata) {
-    
+    # browser()
     # ----------
     # Check for the assay type and create seurat object
     # ----------
@@ -137,19 +137,15 @@ h5ad_to_seurat <- function(adata) {
     
 }
 
+
+# ##################################################
+# Check if the conversion is working or not (h5ad to seurat)
 spatial_adata <- read_h5ad("/Users/tonmoy/Downloads/UKF334_T_ST.h5ad")
 sc_bla <- read_h5ad("/Users/tonmoy/Downloads/Dummy_object.h5ad")
 seurat_object_converted <- h5ad_to_seurat(sc_bla) # spatial_adata/sc_bla --> works FINE
 
 
-# ##################################################
-# Get the image information from the seurat
-sc_seurat <- readRDS("/Users/tonmoy/Research/GBM_3/data/ALA_count/ala_seurat_filtered_final.rds")
 
-
-### ################################################
-### TODO: Check if all the functions work both in scanpy and seurat
-### ################################################
 # ##################################################
 # Convert the seurat to h5ad
 seurat_to_h5ad <- function(seurat_object) {
@@ -205,7 +201,7 @@ seurat_to_h5ad <- function(seurat_object) {
             # Because seurat can store the informative sub setted features rather
             # than the full set of features, we need to fix this issue for the scanpy
             # =========================
-            if (!is.null(pca_fl)) {
+            if (!is.null(seurat_object@reductions[["pca"]]@feature.loadings)) {
                 
                 # == Create a blank matrix with the same dimensions # ----------
                 pca_fl <- matrix(0, nrow = nrow(seurat_object), ncol = ncol(seurat_object@reductions[["pca"]]@feature.loadings))
@@ -372,13 +368,36 @@ seurat_to_h5ad <- function(seurat_object) {
 
 }
 
+
+# ##################################################
+# Check if the conversion is working or not (seurat to h5ad)
 lalala <- readRDS("/Users/tonmoy/Research/Spatial_proximity_project/data/all_seurat/seurat_list_processed.rds")
+lololo <- seurat_to_h5ad(lalala[[1]]) # --> works fine for v1 spatial
+
 lipili <- Load10X_Spatial("/Users/tonmoy/Research/Spatial_proximity_project/data/LGG/LGG/IDHm_BWH23_oligo/")
-spatial_seurat <- lalala[[1]]
+lopolo <- seurat_to_h5ad(lipili) # --> works fine for v2 spatial
 
-dim(sc_bla$varm$PCs)
+lamala <- readRDS("/Users/tonmoy/Research/GBM_3/data/ALA_count/ala_seurat_filtered_final.rds")
+lomolo <- seurat_to_h5ad(lamala) # --> works fine for sc
 
-# labla <- seurat_list[[1]]
-balala <- seurat_to_h5ad(lipili)
-balala <- seurat_to_h5ad(spatial_seurat)
+# ----------
+# Save the results
+# ----------
+write_h5ad(
+    lomolo,
+    "/Users/tonmoy/Research/GBM_3/test/seurat_adata_conversion/sc.h5ad",
+    compression = NULL,
+    compression_opts = NULL,
+    as_dense = list()
+)
+
+
+
+
+
+
+
+
+
+
 
