@@ -70,7 +70,7 @@ get_image_h5ad <- function(adata, assay="Spatial", slice="slice1") {
 # ##################################################
 # Convert the h5ad to seurat
 h5ad_to_seurat <- function(adata) {
-    # browser()
+
     # ----------
     # Check for the assay type and create seurat object
     # ----------
