@@ -244,7 +244,6 @@ seurat_to_h5ad <- function(seurat_object) {
             } else {
                 stop("The spatial assay version is not supported for now!!")
             }
-            
         } else if (names(seurat_object@assays) == "RNA") {
             # == RNA assay # ---------------------------------------------------
             key <- "RNA"
@@ -252,7 +251,17 @@ seurat_to_h5ad <- function(seurat_object) {
             stop("The seurat object does not have the required slots to convert it into h5ad")
         }
             
-        
+        # ----------
+        # Check for the version of the seurat assay
+        # ----------
+        if (class(seurat_object@assays[[key]]) == "Assay5") {
+            seurat_version <- "v5"
+        } else if (class(seurat_object@assays[[key]]) == "Assay") {
+            seurat_version <- "v4"
+        } else {
+            stop("The seurat assay version is not supported!!")
+        }
+
         # =========================
         # Create the image slot structure for adata if the assay is spatial
         # =========================
@@ -277,14 +286,23 @@ seurat_to_h5ad <- function(seurat_object) {
         # =========================
         # Create the adata object
         # =========================
-        adata <- AnnData(X = t(seurat_object@assays[[key]]@layers[["counts"]]),
-                         obs = seurat_object@meta.data,
-                         var = var)
+        if (seurat_version == "v5") {
+            adata <- AnnData(X = t(seurat_object@assays[[key]]@layers[["counts"]]),
+                             obs = seurat_object@meta.data,
+                             var = var)
+        } else if (seurat_version == "v4") {
+            adata <- AnnData(X = t(seurat_object@assays[[key]]@counts),
+                             obs = seurat_object@meta.data,
+                             var = var)
+        } else {
+            stop("Waaaait!! How is this possible? It should not work xD")
+        }
 
         # ----------
         # Add spatial information to the adata object
         # ----------
         if (key == "Spatial") {
+            
             adata$uns$spatial <- image_slot_structure
             
             # == Add the spatial coordinates # ---------------------------------
@@ -334,27 +352,58 @@ seurat_to_h5ad <- function(seurat_object) {
                 
             }
         }
-        
+
         # =========================
         # Add layers
         # =========================
-        # == Count data # ------------------------------------------------------
-        if (class(seurat_object@assays[[key]]@layers[["counts"]]) == "dgCMatrix") {
-            adata$layers[["counts"]] <- t(seurat_object@assays[[key]]@layers[["counts"]])
-        }
-        
-        # == log2 normalized data # --------------------------------------------
-        if (class(seurat_object@assays[[key]]@layers[["data"]]) == "dgCMatrix") {
-            adata$layers[["log2norm_counts"]] <- t(seurat_object@assays[[key]]@layers[["counts"]])
-        }
-        
-        # == Scaled data # -----------------------------------------------------
-        if ((class(seurat_object@assays[[key]]@layers[["scale.data"]]) == "matrix")[1]) {
-            scaled_data <- t(seurat_object@assays[[key]]@layers[["scale.data"]])
-            colnames(scaled_data) <- NULL
-            adata$layers[["scaled"]] <- scaled_data
-        }
+        if (seurat_version == "v5") {
             
+            # == Count data # --------------------------------------------------
+            if (class(seurat_object@assays[[key]]@layers[["counts"]]) == "dgCMatrix") {
+                adata$layers[["counts"]] <- t(seurat_object@assays[[key]]@layers[["counts"]])
+            }
+            
+            # == log2 normalized data # ----------------------------------------
+            if (class(seurat_object@assays[[key]]@layers[["data"]]) == "dgCMatrix") {
+                adata$layers[["log2norm_counts"]] <- t(seurat_object@assays[[key]]@layers[["data"]])
+            }
+            
+            # == Scaled data # -------------------------------------------------
+            if ((class(seurat_object@assays[[key]]@layers[["scale.data"]]) == "matrix")[1]) {
+                scaled_data <- t(seurat_object@assays[[key]]@layers[["scale.data"]])
+                colnames(scaled_data) <- NULL
+                adata$layers[["scaled"]] <- scaled_data
+            }
+            
+        } else if (seurat_version == "v4") {
+            
+            # == Count data # --------------------------------------------------
+            if (class(seurat_object@assays[[key]]@counts) == "dgCMatrix") {
+                adata$layers[["counts"]] <- t(seurat_object@assays[[key]]@counts)
+            }
+            
+            # == log2 normalized data # ----------------------------------------
+            if (class(seurat_object@assays[[key]]@data) == "dgCMatrix") {
+                adata$layers[["log2norm_counts"]] <- t(seurat_object@assays[[key]]@data)
+            }
+            
+            # == Scaled data # -------------------------------------------------
+            if ((class(seurat_object@assays[["RNA"]]@scale.data) == "matrix")[1]) {
+                
+                # ----------
+                # Check if the layer is empty or not
+                # ----------
+                if (dim(seurat_object@assays[[key]]@scale.data)[1] != 0) {
+                    scaled_data <- t(seurat_object@assays[[key]]@scale.data)
+                    colnames(scaled_data) <- NULL
+                    adata$layers[["scaled"]] <- scaled_data
+                }
+            }
+            
+        } else {
+            stop("Waaaait!! How is this possible? It should not work xD")
+        }
+        
         # ----------
         # Check if the following slots are present or not
         # If present, then add them to the adata object
@@ -374,6 +423,11 @@ seurat_to_h5ad <- function(seurat_object) {
             adata$varm$PCs <- pca_fl
         }
         
+        # =========================
+        # Add the misc slot to the uns layer
+        # =========================
+        # adata$uns <- seurat_object@misc
+        
     } 
     
     return(adata)
@@ -384,7 +438,7 @@ seurat_to_h5ad <- function(seurat_object) {
 # ##################################################
 # Check if the conversion is working or not (seurat to h5ad)
 # ##################################################
-lalala <- readRDS("/Users/tonmoy/Research/Spatial_proximity_project/data/all_seurat/seurat_list_processed.rds")
+lalala <- readRDS("/Users/tonmoy/Research/Spatial_proximity_project/data/all_seurat/seurat_list_processed.rds")[[1]]
 lololo <- seurat_to_h5ad(lalala[[1]]) # --> works fine for v1 spatial
 
 lipili <- Load10X_Spatial("/Users/tonmoy/Research/Spatial_proximity_project/data/LGG/LGG/IDHm_BWH23_oligo/")
@@ -404,9 +458,9 @@ write_h5ad(
     as_dense = list()
 )
 
-
-
-
-
+# ##################################################
+# Check for seurat version 4 or 5
+bd_rhapsody_seurat <- readRDS("/Users/tonmoy/Downloads/Rhapsody-53-54_Seurat.rds")
+bd_rhapsody_h5ad <- seurat_to_h5ad(bd_rhapsody_seurat) # --> works for seurat v4 also
 
 
