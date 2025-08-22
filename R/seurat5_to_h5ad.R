@@ -6,8 +6,8 @@ library(SeuratDisk)
 library(anndata)
 library(dplyr)
 library(reticulate)
-Sys.setenv(RETICULATE_PYTHON = "/Users/tonmoy/Research/Spatial_proximity_project/env/decoupleR/bin/python")
-use_condaenv(condaenv = "decoupleR", conda = "auto", required = NULL)
+Sys.setenv(RETICULATE_PYTHON = "/Users/tonmoy/Research/Spatial_proximity_project/env/decoupleR_2/bin/python")
+# use_condaenv(condaenv = "decoupleR", conda = "auto", required = NULL)
 
 
 # ##################################################
@@ -141,9 +141,9 @@ h5ad_to_seurat <- function(adata) {
 # ##################################################
 # Check if the conversion is working or not (h5ad to seurat)
 # ##################################################
-spatial_adata <- read_h5ad("/Users/tonmoy/Downloads/UKF334_T_ST.h5ad")
-sc_bla <- read_h5ad("/Users/tonmoy/Downloads/Dummy_object.h5ad")
-seurat_object_converted <- h5ad_to_seurat(sc_bla) # spatial_adata/sc_bla --> works FINE
+# spatial_adata <- read_h5ad("/Users/tonmoy/Downloads/UKF334_T_ST.h5ad")
+# sc_bla <- read_h5ad("/Users/tonmoy/Downloads/Dummy_object.h5ad")
+# seurat_object_converted <- h5ad_to_seurat(sc_bla) # spatial_adata/sc_bla --> works FINE
 
 
 # ##################################################
@@ -388,7 +388,7 @@ seurat_to_h5ad <- function(seurat_object) {
             }
             
             # == Scaled data # -------------------------------------------------
-            if ((class(seurat_object@assays[["RNA"]]@scale.data) == "matrix")[1]) {
+            if ((class(seurat_object@assays[[key]]@scale.data) == "matrix")[1]) {
                 
                 # ----------
                 # Check if the layer is empty or not
@@ -438,29 +438,29 @@ seurat_to_h5ad <- function(seurat_object) {
 # ##################################################
 # Check if the conversion is working or not (seurat to h5ad)
 # ##################################################
-lalala <- readRDS("/Users/tonmoy/Research/Spatial_proximity_project/data/all_seurat/seurat_list_processed.rds")[[1]]
-lololo <- seurat_to_h5ad(lalala[[1]]) # --> works fine for v1 spatial
-
-lipili <- Load10X_Spatial("/Users/tonmoy/Research/Spatial_proximity_project/data/LGG/LGG/IDHm_BWH23_oligo/")
-lopolo <- seurat_to_h5ad(lipili) # --> works fine for v2 spatial
-
-lamala <- readRDS("/Users/tonmoy/Research/GBM_3/data/ALA_count/ala_seurat_filtered_final.rds")
-lomolo <- seurat_to_h5ad(lamala) # --> works fine for sc
-
-# ----------
-# Save the results
-# ----------
-write_h5ad(
-    lomolo,
-    "/Users/tonmoy/Research/GBM_3/test/seurat_adata_conversion/sc.h5ad",
-    compression = NULL,
-    compression_opts = NULL,
-    as_dense = list()
-)
-
-# ##################################################
-# Check for seurat version 4 or 5
-bd_rhapsody_seurat <- readRDS("/Users/tonmoy/Downloads/Rhapsody-53-54_Seurat.rds")
-bd_rhapsody_h5ad <- seurat_to_h5ad(bd_rhapsody_seurat) # --> works for seurat v4 also
+# lalala <- readRDS("/Users/tonmoy/Research/Spatial_proximity_project/data/all_seurat/seurat_list_processed.rds")[[1]]
+# lololo <- seurat_to_h5ad(lalala[[1]]) # --> works fine for v1 spatial
+# 
+# lipili <- Load10X_Spatial("/Users/tonmoy/Research/Spatial_proximity_project/data/LGG/LGG/IDHm_BWH23_oligo/")
+# lopolo <- seurat_to_h5ad(lipili) # --> works fine for v2 spatial
+# 
+# lamala <- readRDS("/Users/tonmoy/Research/GBM_3/data/ALA_count/ala_seurat_filtered_final.rds")
+# lomolo <- seurat_to_h5ad(lamala) # --> works fine for sc
+# 
+# # ----------
+# # Save the results
+# # ----------
+# write_h5ad(
+#     lomolo,
+#     "/Users/tonmoy/Research/GBM_3/test/seurat_adata_conversion/sc.h5ad",
+#     compression = NULL,
+#     compression_opts = NULL,
+#     as_dense = list()
+# )
+# 
+# # ##################################################
+# # Check for seurat version 4 or 5
+# bd_rhapsody_seurat <- readRDS("/Users/tonmoy/Downloads/Rhapsody-53-54_Seurat.rds")
+# bd_rhapsody_h5ad <- seurat_to_h5ad(bd_rhapsody_seurat) # --> works for seurat v4 also
 
 

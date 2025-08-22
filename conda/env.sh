@@ -9,6 +9,12 @@ conda create --prefix ./env pandas numpy matplotlib scikit-learn
 conda create --name env_name pandas numpy matplotlib scikit-learn
 
 # -----
+# Create conda environment from a yaml
+# -----
+conda env create -f environment.yml
+conda env create --prefix ./env -f environment.yml
+
+# -----
 # Remove a conda environment
 # -----
 conda env remove -–prefix "conda_env"
